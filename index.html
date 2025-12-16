@@ -1,0 +1,319 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Weekly Care Log - Multi-Shift with Time Tasks</title>
+<link rel="stylesheet" href="styles.css">
+
+<!-- SheetJS library for Excel export -->
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+
+<style>
+.top-header {
+  width: 100%;
+  margin-bottom: 25px;
+}
+
+.top-flex {
+  display: flex;
+  justify-content: space-between;
+  width: 100%;
+}
+
+.left-block, .right-block {
+  width: 48%;
+}
+
+.left-block label, .right-block label {
+  font-weight: bold;
+}
+
+.center-block {
+  text-align: center;
+  margin-top: 15px;
+  margin-bottom: 15px;
+  font-weight: bold;
+  font-size: 20px;
+  line-height: 1.4;
+}
+</style>
+
+<div class="top-header">
+
+  <!-- TOP: LEFT + RIGHT -->
+  <div class="top-flex">
+
+    <!-- LEFT SIDE -->
+    <div class="left-block">
+      <div>
+        <label>Facility Name:</label><br>
+        <input id="facility" type="text"  style="width:100%">
+      </div>
+
+      <div style="margin-top:10px;">
+        <label>Week Of:</label><br>
+        <input id="weekOf" type="date" style="width:100%">
+      </div>
+    </div>
+
+    <!-- RIGHT SIDE -->
+    <div class="right-block">
+      <div>
+        <label>Supervisor Name:</label><br>
+        <input id="supervisor" type="text" style="width:100%">
+      </div>
+
+      <div style="margin-top:10px;">
+        <label>Supervisor Signature:</label><br>
+        <input id="superSig" type="text" style="width:100%">
+      </div>
+    </div>
+
+  </div>
+
+  <!-- CENTER TEXT -->
+  <div class="center-block">
+    A&D Home Health Care, Inc<br>
+    MI Choice Waiver Program – Waiver Division
+  </div>
+
+  <!-- Participant + Week Starting -->
+  <div class="row">
+    <label>Participant Name:&nbsp;</label>
+    <input id="participant" type="text" style="flex:1">
+  </div>
+
+  <div class="row" style="margin-top:8px;">
+    <label>Week Starting:&nbsp;</label>
+    <input id="weekStart" type="date">
+  </div>
+
+</div>
+
+<!-- end top-form -->
+
+<div class="container">
+
+<table id="careTable">
+  <thead>
+    <tr>
+      <th>Day</th>
+      <th>Date</th>
+      <th>Shift</th>
+
+      <th>Bath</th>
+      <th>Peri Care</th>
+      <th>Redirecting</th>
+      <th>Cueing</th>
+      <th>Hair Care</th>
+      <th>Oral Care</th>
+      <th>Rotation</th>
+      <th>Dressing</th>
+      <th>Mobility Assist</th>
+      <th>Meal Delivery</th>
+      <th>PRN meds</th>
+      <th>Exercise</th>
+      <th>Supervised Smoking</th>
+      <th>Other</th>
+
+      <th>CG Initials</th>
+      <th>Total Min</th>
+    </tr>
+  </thead>
+  <tbody>
+<script>
+const days = ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
+const shifts = ["AM","MID","PM"];
+let row = 0;
+let html = "";
+
+for (let d = 0; d < 7; d++) {
+  for (let s = 0; s < 3; s++) {
+
+    html += `<tr>`;
+
+    if (s === 0) {
+      html += `
+        <td rowspan="3">${days[d]}</td>
+        <td rowspan="3"><input type='date' id='date_${d}'></td>
+      `;
+    }
+
+    html += `<td>${shifts[s]}</td>`;
+
+    const fields = [
+      "bath",
+      "periCare",
+      "redirecting",
+      "cueing",
+      "hairCare",
+      "oralCare",
+      "rotation",
+      "dressing",
+      "mobilityAssist",
+      "mealDelivery",
+      "prnMeds",
+      "exercise",
+      "supervisedSmoking",
+      "other"
+    ];
+
+    for (let f of fields) {
+      html += `<td><input type='number' id='${f}_${row}' value='0' min='0' oninput='calcRow(${row})'></td>`;
+    }
+
+    html += `<td><input type='text' id='cg_${row}'></td>`;
+    html += `<td class='total-box' id='total_${row}'>0</td>`;
+
+    html += `</tr>`;
+    row++;
+  }
+}
+
+document.write(html);
+</script>
+  </tbody>
+</table>
+
+<div class="btn-row">
+  <button class="save-btn" onclick="alert('Saved locally on device')">Save Week</button>
+  <button class="export-btn" onclick="exportExcel()">Export Excel</button>
+</div>
+
+</div>
+
+<script>
+function calcRow(id){
+  const fields=[
+      "bath_","periCare_","redirecting_","cueing_","hairCare_","oralCare_",
+      "rotation_","dressing_","mobilityAssist_","mealDelivery_","prnMeds_",
+      "exercise_","supervisedSmoking_","other_"
+  ];
+
+  let sum=0;
+  fields.forEach(f=>{ sum+=Number(document.getElementById(f+id).value)||0 });
+  document.getElementById("total_"+id).innerText=sum;
+}
+
+function exportExcel() {
+  let wb = XLSX.utils.book_new();
+  let ws = {};
+
+  // ---------- TOP INFO ----------
+  ws["A1"] = { v: "Facility Name:" };
+  ws["B1"] = { v: document.getElementById("facility").value || "" };
+
+  ws["A2"] = { v: "Week Of:" };
+  ws["B2"] = { v: document.getElementById("weekOf").value || "" };
+
+  ws["K1"] = { v: "Supervisor Name:" };
+  ws["L1"] = { v: document.getElementById("supervisor").value || "" };
+
+  ws["K2"] = { v: "Supervisor Signature:" };
+  ws["L2"] = { v: document.getElementById("superSig").value || "" };
+
+ws["F4"] = {
+  v: "A&D Home Health Care, Inc",
+  s: { alignment: { horizontal: "center" }, font: { bold: true, sz: 18 } }
+};
+
+ws["F5"] = {
+  v: "MI Choice Waiver Program – Waiver Division",
+  s: { alignment: { horizontal: "center" }, font: { bold: true, sz: 14 } }
+};
+
+ws["!merges"] = [
+  { s: { r: 3, c: 5 }, e: { r: 3, c: 15 } }, // F4 → P4
+  { s: { r: 4, c: 5 }, e: { r: 4, c: 15 } }  // F5 → P5
+];
+
+
+  ws["A7"] = { v: "Participant Name:" };
+  ws["B7"] = { v: document.getElementById("participant").value || "" };
+
+  ws["A8"] = { v: "Week Starting:" };
+  ws["B8"] = { v: document.getElementById("weekStart").value || "" };
+
+  // ---------- TABLE DATA (NO ROWSPAN ISSUES) ----------
+  const tableData = [];
+
+  tableData.push([
+    "Day","Date","Shift",
+    "Bath","Peri Care","Redirecting","Cueing","Hair Care","Oral Care",
+    "Rotation","Dressing","Mobility Assist","Meal Delivery","PRN meds",
+    "Exercise","Supervised Smoking","Other",
+    "CG Initials","Total Min"
+  ]);
+
+  let rowIndex = 0;
+
+  for (let d = 0; d < 7; d++) {
+    const dateVal = document.getElementById(`date_${d}`).value || "";
+
+    for (let s = 0; s < 3; s++) {
+      tableData.push([
+        days[d],
+        dateVal,
+        shifts[s],
+
+        document.getElementById(`bath_${rowIndex}`).value,
+        document.getElementById(`periCare_${rowIndex}`).value,
+        document.getElementById(`redirecting_${rowIndex}`).value,
+        document.getElementById(`cueing_${rowIndex}`).value,
+        document.getElementById(`hairCare_${rowIndex}`).value,
+        document.getElementById(`oralCare_${rowIndex}`).value,
+        document.getElementById(`rotation_${rowIndex}`).value,
+        document.getElementById(`dressing_${rowIndex}`).value,
+        document.getElementById(`mobilityAssist_${rowIndex}`).value,
+        document.getElementById(`mealDelivery_${rowIndex}`).value,
+        document.getElementById(`prnMeds_${rowIndex}`).value,
+        document.getElementById(`exercise_${rowIndex}`).value,
+        document.getElementById(`supervisedSmoking_${rowIndex}`).value,
+        document.getElementById(`other_${rowIndex}`).value,
+
+        document.getElementById(`cg_${rowIndex}`).value,
+        document.getElementById(`total_${rowIndex}`).innerText
+      ]);
+
+      rowIndex++;
+    }
+  }
+
+  XLSX.utils.sheet_add_aoa(ws, tableData, { origin: "A11" });
+
+ // ---------- COLUMN WIDTHS ----------
+// ---------- COLUMN WIDTHS (TOP INFO + TABLE) ----------
+ws["!cols"] = [
+  { wch: 18 }, // A - labels
+  { wch: 28 }, // B - values (Facility / Week Of)
+  { wch: 10 }, // C
+  { wch: 10 }, // D
+  { wch: 10 }, // E
+  { wch: 12 }, // F
+  { wch: 12 }, // G
+  { wch: 12 }, // H
+  { wch: 12 }, // I
+  { wch: 10 }, // J
+  { wch: 20 }, // K - labels (Supervisor)
+  { wch: 28 }, // L - values (Supervisor / Signature)
+  { wch: 12 }, // M
+  { wch: 12 }, // N
+  { wch: 12 }, // O
+  { wch: 12 }, // P
+  { wch: 12 }, // Q
+  { wch: 12 }, // R
+  { wch: 12 }  // S
+];
+
+
+
+XLSX.utils.book_append_sheet(wb, ws, "Weekly Log");
+
+  XLSX.writeFile(wb, "weekly_care_log.xlsx");
+}
+</script>
+
+
+</body>
+</html>
